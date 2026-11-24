@@ -1,5 +1,5 @@
-/* Service Worker：预缓存应用外壳，离线可用 */
-const CACHE = 'dwp-v1.0.0';
+/* Service Worker：预缓存应用外壳，离线可用；更新时优先拿新版本 */
+const CACHE = 'dwp-v1.1.0';
 
 const ASSETS = [
   './',
@@ -50,16 +50,34 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
 
-  e.respondWith(
-    caches.match(req).then((hit) => {
-      if (hit) return hit;
-      return fetch(req).then((res) => {
+  const wantsHTML = req.mode === 'navigate' ||
+    (req.headers.get('accept') || '').indexOf('text/html') > -1;
+
+  // 页面：网络优先，拿到新的就用新的；断网再回缓存
+  if (wantsHTML) {
+    e.respondWith(
+      fetch(req).then((res) => {
         if (res && res.status === 200 && res.type === 'basic') {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put(req, copy));
         }
         return res;
-      }).catch(() => caches.match('./index.html'));
+      }).catch(() => caches.match(req).then((hit) => hit || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  // 静态资源：先用缓存保证秒开，同时后台悄悄更新，下次访问即最新
+  e.respondWith(
+    caches.match(req).then((hit) => {
+      const network = fetch(req).then((res) => {
+        if (res && res.status === 200 && res.type === 'basic') {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(req, copy));
+        }
+        return res;
+      }).catch(() => hit || caches.match('./index.html'));
+      return hit || network;
     })
   );
 });
