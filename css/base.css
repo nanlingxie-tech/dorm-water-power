@@ -1,103 +1,198 @@
-/* 基础：变量 / 重置 / 布局 / 排版 */
+/* 基础：设计变量 / 重置 / 布局 / 排版 / 顶部条
+ * 视觉基调：iOS 玻璃质感 —— 半透明层 + 背景模糊 + 发丝边 + 柔和投影
+ */
 :root {
+  /* 主色 */
   --pri: #2f6bff;
   --pri-d: #1f52d6;
   --pri-l: #eaf0ff;
-  --bg: #f4f6fa;
-  --card: #fff;
-  --ink: #101828;
-  --sub: #667085;
-  --line: #e8ebf1;
-  --soft: #f7f9fc;
-  --ok: #0f9d6e;
-  --ok-bg: #e7f7f1;
-  --warn: #b54708;
-  --warn-bg: #fef4e6;
-  --bad: #c4320a;
-  --bad-bg: #fdeceb;
-  --r: 16px;
-  --shadow: 0 1px 2px rgba(16, 24, 40, .05);
+
+  /* 中性色 */
+  --ink: #0f172a;
+  --sub: #64748b;
+  --line: rgba(15, 23, 42, .08);
+
+  /* 玻璃 */
+  --glass: rgba(255, 255, 255, .62);
+  --glass-strong: rgba(255, 255, 255, .82);
+  --glass-line: rgba(255, 255, 255, .72);
+  --glass-dark: rgba(13, 20, 32, .72);
+  --blur: 20px;
+  --blur-sm: 10px;
+
+  /* 形状与投影 */
+  --r: 20px;
+  --r-sm: 14px;
+  --shadow-1: 0 1px 2px rgba(16, 24, 40, .05);
+  --shadow-2: 0 12px 32px rgba(16, 24, 40, .10);
+  --shadow-3: 0 24px 60px rgba(16, 24, 40, .16);
+
+  /* 背景 */
+  --bg: #eef2f9;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; padding: 0; }
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
-  background: #e9edf4; color: var(--ink); -webkit-font-smoothing: antialiased;
-  font-size: 14px; line-height: 1.5;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro SC", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+
+  /* 三层柔光叠在浅灰底上，让玻璃有东西可以"透" */
+  background:
+    radial-gradient(1100px 620px at 8% -12%, #d9e6ff 0%, rgba(217, 230, 255, 0) 62%),
+    radial-gradient(900px 520px at 108% 4%, #e6ddff 0%, rgba(230, 221, 255, 0) 58%),
+    radial-gradient(860px 640px at 46% 112%, #d6f1ff 0%, rgba(214, 241, 255, 0) 58%),
+    var(--bg);
+  background-attachment: fixed;
+  min-height: 100vh;
 }
+
 button, input, textarea { font-family: inherit; }
 button { cursor: pointer; }
 h1, h2, h3, p, ul { margin: 0; }
 ul { padding: 0; list-style: none; }
 
-/* 页面容器：手机上满屏，桌面上是一列卡片 */
+/* ---------- 打开动画 & 无障碍 ---------- */
+@keyframes viewIn {
+  from { opacity: 0; transform: translateY(8px) scale(.996); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
 .view {
-  max-width: 520px; margin: 0 auto; min-height: calc(100dvh - 47px);
-  display: flex; flex-direction: column; background: var(--bg);
-  position: relative; overflow-x: hidden;
+  max-width: 520px;
+  margin: 0 auto;
+  min-height: calc(100dvh - 47px);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow-x: hidden;
+  animation: viewIn .26s cubic-bezier(.22, .8, .24, 1);
 }
 .view.wide { max-width: 1100px; }
 
-.body { flex: 1; padding: 13px 14px 96px; }
+.body { flex: 1; padding: 14px 14px 96px; }
 
-/* 排版 */
+@media (prefers-reduced-motion: reduce) {
+  .view { animation: none; }
+  * { transition: none !important; }
+}
+
+/* ---------- 排版 ---------- */
 .t1 { font-size: 11px; }
 .t2 { font-size: 13px; }
 .t3 { font-size: 15px; }
 .muted { color: var(--sub); }
-.bad { color: var(--bad); }
-.ok { color: var(--ok); }
+.bad { color: #c4320a; }
+.ok { color: #0f9d6e; }
 .ink { color: var(--ink); }
-.num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  letter-spacing: -.2px;
+}
 .center { text-align: center; }
 .right { text-align: right; }
-.hint { font-size: 11px; color: #98a2b3; margin-top: 6px; line-height: 1.6; }
+.hint { font-size: 11px; color: #94a3b8; margin-top: 6px; line-height: 1.65; }
 .row { display: flex; align-items: center; gap: 10px; }
 .between { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 
-/* 顶部品牌条 */
+/* ---------- 玻璃通用类 ---------- */
+.glass {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(180%);
+  backdrop-filter: blur(var(--blur)) saturate(180%);
+  border: 1px solid var(--glass-line);
+}
+.glass-dark {
+  background: var(--glass-dark);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(160%);
+  backdrop-filter: blur(var(--blur)) saturate(160%);
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+/* 不支持 backdrop-filter 的浏览器退回实色，保证可读 */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass, .glass-dark { background: #fff; }
+  .glass-dark { background: #0d1420; }
+}
+
+/* ---------- 顶部品牌条 ---------- */
 .topbar {
   position: sticky; top: 0; z-index: 60;
   max-width: 520px; margin: 0 auto; width: 100%;
   display: flex; align-items: center; gap: 12px;
-  padding: 9px 14px; background: #0d1420; color: #fff;
+  padding: 9px 14px; color: #fff;
+  background: var(--glass-dark);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(160%);
+  backdrop-filter: blur(var(--blur)) saturate(160%);
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
 }
-.view.wide ~ .topbar, .topbar.wide { max-width: 1100px; }
-.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; }
-.brand i { width: 8px; height: 8px; border-radius: 3px; background: #3d7bff; box-shadow: 0 0 10px #3d7bff; }
+body.wide .topbar { max-width: 1100px; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; letter-spacing: .2px; }
+.brand i {
+  width: 8px; height: 8px; border-radius: 3px; background: #5b8cff;
+  box-shadow: 0 0 12px #3d7bff, 0 0 2px #fff;
+}
 
-/* 角色切换器 */
+/* ---------- 角色切换器 ---------- */
 .roleswitch { margin-left: auto; position: relative; }
 .roleswitch summary {
-  list-style: none; cursor: pointer; font-size: 12.5px; color: #cfe0ff;
-  background: #1b2740; border: 1px solid #2a3a56; padding: 6px 11px; border-radius: 99px;
+  list-style: none; cursor: pointer; font-size: 12.5px; color: #dbe6fb;
+  background: rgba(255, 255, 255, .12);
+  border: 1px solid rgba(255, 255, 255, .18);
+  padding: 6px 11px; border-radius: 99px;
   display: flex; align-items: center; gap: 5px;
+  transition: background .18s ease, transform .12s ease;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
+.roleswitch summary:hover { background: rgba(255, 255, 255, .18); }
+.roleswitch summary:active { transform: scale(.97); }
 .roleswitch summary::-webkit-details-marker { display: none; }
 .roleswitch summary b { color: #fff; }
+
 .roleswitch .menu {
-  position: absolute; right: 0; top: calc(100% + 8px); width: 236px;
-  background: #fff; color: var(--ink); border-radius: 14px; padding: 6px;
-  box-shadow: 0 18px 44px rgba(13, 20, 32, .28); z-index: 80;
+  position: absolute; right: 0; top: calc(100% + 10px); width: 240px;
+  color: var(--ink); border-radius: 18px; padding: 7px;
+  background: rgba(255, 255, 255, .88);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  backdrop-filter: blur(28px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, .8);
+  box-shadow: var(--shadow-3);
+  z-index: 80;
+  animation: viewIn .18s cubic-bezier(.22, .8, .24, 1);
 }
-.menu-t { font-size: 11px; color: var(--sub); padding: 7px 10px 5px; }
+.menu-t { font-size: 11px; color: var(--sub); padding: 8px 10px 5px; }
 .roleswitch .menu button {
   width: 100%; display: flex; align-items: center; justify-content: space-between;
   gap: 8px; border: 0; background: transparent; color: var(--ink);
-  padding: 9px 10px; border-radius: 9px; font-size: 13px; text-align: left;
+  padding: 10px 10px; border-radius: 11px; font-size: 13px; text-align: left;
+  transition: background .15s ease;
 }
-.roleswitch .menu button:hover { background: var(--soft); }
-.roleswitch .menu button.on { background: var(--pri-l); color: var(--pri-d); font-weight: 600; }
-.roleswitch .menu button.danger { color: var(--bad); }
-.menu-sep { height: 1px; background: var(--line); margin: 6px 4px; }
+.roleswitch .menu button:hover { background: rgba(47, 107, 255, .08); }
+.roleswitch .menu button.on { background: var(--pri); color: #fff; font-weight: 600; }
+.roleswitch .menu button.danger { color: #c4320a; }
+.menu-sep { height: 1px; background: rgba(15, 23, 42, .08); margin: 6px 6px; }
 
-/* 提示条 */
+/* ---------- 轻提示 ---------- */
 .toast {
-  position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%);
-  background: rgba(16, 24, 40, .94); color: #fff; font-size: 13px;
-  padding: 10px 16px; border-radius: 11px; z-index: 999; max-width: 82vw;
-  animation: toastIn .16s ease;
+  position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%);
+  background: rgba(15, 23, 42, .88);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, .12);
+  color: #fff; font-size: 13px;
+  padding: 11px 16px; border-radius: 14px; z-index: 999; max-width: 82vw;
+  box-shadow: var(--shadow-2);
+  animation: toastIn .18s cubic-bezier(.22, .8, .24, 1);
 }
-.toast.out { opacity: 0; transition: opacity .3s; }
-@keyframes toastIn { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; } }
+.toast.out { opacity: 0; transition: opacity .3s ease; }
+@keyframes toastIn {
+  from { opacity: 0; transform: translate(-50%, 10px) scale(.98); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
