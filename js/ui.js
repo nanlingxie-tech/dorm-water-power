@@ -164,8 +164,25 @@
     }).join('') + '</nav>';
   };
 
-  ui.hdr = function (o) {
-    return '<header class="nav">' +
+  // 账期选择器：一行可点的月份胶囊（点哪期看哪期）
+  ui.periodChips = function (periods, current, key, extra) {
+    if (!periods || periods.length < 2) return '';
+    var qs = '';
+    Object.keys(extra || {}).forEach(function (k) {
+      if (k === 'period') return;
+      qs += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(extra[k]);
+    });
+    var list = (periods || []).slice();
+    if (list.indexOf(current) === -1) list.unshift(current);
+    var chips = list.map(function (p) {
+      var m = +p.slice(5, 7);
+      return '<button class="pchip ' + (p === current ? 'on' : '') + '" title="' + p + '" ' +
+        'data-act="nav:' + key + '?period=' + p + qs + '">' + m + '月</button>';
+    }).join('');
+    return '<div class="periodbar"><span class="pb-lab">账期</span>' + chips + '</div>';
+  };
+
+  ui.hdr = function (o) {    return '<header class="nav">' +
       (o.back ? '<button class="back" data-act="' + o.back + '">' + ui.icon('back', 17) + '</button>' : '') +
       '<div class="nav-mid"><h1>' + o.title + '</h1>' + (o.sub ? '<p>' + o.sub + '</p>' : '') + '</div>' +
       (o.right ? '<div class="nav-right">' + o.right + '</div>' : '') +
