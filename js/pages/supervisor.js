@@ -51,15 +51,15 @@
     return '<div class="view wide"><div class="body">' + svNav('rooms') +
       '<div class="panel"><div class="ph">待审核的房间变更（' + pend.length + '）</div>' +
       '<div class="note-bar">保安提交的新增/更换住户，需主管通过后才写入房间台账。驳回必须填理由。</div>' +
-      '<table class="tbl"><thead><tr><th>房间</th><th>楼栋</th><th>楼层</th><th>类型</th><th>新住户</th>' +
+      '<div class="table-scroll"><table class="tbl"><thead><tr><th>房间</th><th>楼栋</th><th>楼层</th><th>类型</th><th>新住户</th>' +
       '<th>原住户</th><th>提交人</th><th>操作</th></tr></thead>' +
       '<tbody>' + (rows || '<tr><td colspan="8" class="muted center" style="padding:26px">没有待审核的房间变更</td></tr>') +
-      '</tbody></table></div>' +
+      '</tbody></table></div></div>' +
       '<div class="panel"><div class="ph">处理记录</div>' +
-      '<table class="tbl"><thead><tr><th>房间</th><th>楼栋</th><th>住户</th><th>结果</th>' +
+      '<div class="table-scroll"><table class="tbl"><thead><tr><th>房间</th><th>楼栋</th><th>住户</th><th>结果</th>' +
       '<th>审核人</th><th>时间</th><th>备注</th></tr></thead>' +
       '<tbody>' + (histRows || '<tr><td colspan="7" class="muted center" style="padding:22px">暂无记录</td></tr>') +
-      '</tbody></table></div>' +
+      '</tbody></table></div></div>' +
       '</div></div>';
   };
 
@@ -73,10 +73,11 @@
   }
 
   /* ==================== 工作台 ==================== */
-  P['supervisor.dash'] = function () {
+  P['supervisor.dash'] = function (ctx) {
     var d = dom();
-    var s = d.stats();
-    var blds = d.buildings();
+    var period = (ctx && ctx.params && ctx.params.period) || d.period();
+    var s = d.stats(period);
+    var blds = d.buildings(period);
     var pendingBills = Math.max(0, s.approved - s.bills);
 
     var kpis = [
@@ -110,7 +111,7 @@
         '<div class="t1 muted">' + x.m + '</div></div></li>';
     }).join('');
 
-    var recent = d.pendingReadings().slice(0, 6).map(function (r) {
+    var recent = d.pendingReadings(period).slice(0, 6).map(function (r) {
       var emp = d.employeeOf(r.roomId);
       return '<tr><td class="b">' + r.roomId + '</td><td>' + (emp ? emp.name : '—') + '</td>' +
         '<td class="num">' + (r.meterType === 'e' ? '电' : '水') + '</td>' +
@@ -120,6 +121,7 @@
     }).join('');
 
     return '<div class="view wide"><div class="body">' + svNav('dash') +
+      ui().periodChips(d.periods(), period, 'supervisor.dash') +
       '<div class="kpis">' + kpis + '</div>' +
       '<div class="cols">' +
       '<div class="panel"><div class="ph">楼栋抄表进度</div><div style="padding:6px 16px 12px">' + bars + '</div></div>' +
@@ -127,15 +129,15 @@
       '</div>' +
       '<div class="panel"><div class="ph">最近提交的读数' +
       '<div class="r"><button class="btn sm soft" data-act="nav:supervisor.review">去复核</button></div></div>' +
-      '<table class="tbl"><thead><tr><th>房间</th><th>住户</th><th>表</th><th>上期 → 本期</th><th>用量</th><th>校验</th></tr></thead>' +
-      '<tbody>' + (recent || '<tr><td colspan="6" class="muted center">暂无待复核记录</td></tr>') + '</tbody></table></div>' +
+      '<div class="table-scroll"><table class="tbl"><thead><tr><th>房间</th><th>住户</th><th>表</th><th>上期 → 本期</th><th>用量</th><th>校验</th></tr></thead>' +
+      '<tbody>' + (recent || '<tr><td colspan="6" class="muted center">暂无待复核记录</td></tr>') + '</tbody></table></div></div>' +
       '</div></div>';
   };
 
   /* ==================== 抄表审核 ==================== */
-  P['supervisor.review'] = function () {
+  P['supervisor.review'] = function (ctx) {
     var d = dom();
-    var period = d.period();
+    var period = (ctx && ctx.params && ctx.params.period) || d.period();
     var rooms = d.pendingRooms(period);
     var exceptions = App.store.data.readings.filter(function (r) {
       return r.period === period && r.status === 'exception';
@@ -172,16 +174,17 @@
     }).join('');
 
     return '<div class="view wide"><div class="body">' + svNav('review') +
+      ui().periodChips(d.periods(), period, 'supervisor.review') +
       '<div class="panel"><div class="ph">待复核清单（' + rooms.length + ' 间）' +
       '<div class="r">' + ui().chip('异常 ' + exceptions.length, 'warn') +
       '<button class="btn sm ghost" data-act="approve-all">批量通过（无预警）</button></div></div>' +
-      '<div class="note-bar">缩略图即表盘照片（左电右水）；标黄的说明读数比上月异常，需先看备注。</div>' +
-      '<table class="tbl"><thead><tr><th>表盘</th><th>房间</th><th>住户</th><th>电（上期→本期）</th><th>水（上期→本期）</th><th>校验</th><th>操作</th></tr></thead>' +
-      '<tbody>' + (rows || '<tr><td colspan="7" class="muted center" style="padding:26px">全部复核完毕 🎉</td></tr>') + '</tbody></table></div>' +
+      '<div class="note-bar">缩略图即表盘照片（左电右水）；标黄的说明读数比上月异常，需先看备注。<b>表格可左右滑动</b>查看完整列。</div>' +
+      '<div class="table-scroll"><table class="tbl"><thead><tr><th>表盘</th><th>房间</th><th>住户</th><th>电（上期→本期）</th><th>水（上期→本期）</th><th>校验</th><th>操作</th></tr></thead>' +
+      '<tbody>' + (rows || '<tr><td colspan="7" class="muted center" style="padding:26px">全部复核完毕 🎉</td></tr>') + '</tbody></table></div></div>' +
 
       '<div class="panel"><div class="ph">异常待处理（' + exceptions.length + '）</div>' +
-      '<table class="tbl"><thead><tr><th>房间</th><th>住户</th><th>原因</th><th>标记时间</th><th>操作</th></tr></thead>' +
-      '<tbody>' + (excRows || '<tr><td colspan="5" class="muted center" style="padding:22px">没有异常单</td></tr>') + '</tbody></table></div>' +
+      '<div class="table-scroll"><table class="tbl"><thead><tr><th>房间</th><th>住户</th><th>原因</th><th>标记时间</th><th>操作</th></tr></thead>' +
+      '<tbody>' + (excRows || '<tr><td colspan="5" class="muted center" style="padding:22px">没有异常单</td></tr>') + '</tbody></table></div></div>' +
       '</div></div>';
   };
 })(typeof window !== 'undefined' ? window : globalThis);
