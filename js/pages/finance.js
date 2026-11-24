@@ -8,10 +8,10 @@
   function ui() { return App.ui; }
   function dom() { return App.domain; }
 
-  P['finance.deduct'] = function () {
+  P['finance.deduct'] = function (ctx) {
     var d = dom();
-    var period = d.period();
-    var s = d.stats();
+    var period = (ctx && ctx.params && ctx.params.period) || d.period();
+    var s = d.stats(period);
     var list = d.deductList(period);
     var total = list.reduce(function (a, b) { return a + b.amount; }, 0);
 
@@ -41,17 +41,18 @@
         '<div class="r"><button class="btn sm ghost" data-act="export-csv">导出 Excel(CSV)</button>' +
         '<button class="btn sm" data-act="mark-deducted">标记已代扣</button></div></div>' +
         '<div class="note-bar">导出列：工号 · 姓名 · 部门 · 费用期间 · 金额，可直接导入工资系统。</div>' +
-        '<table class="tbl"><thead><tr><th>工号</th><th>姓名</th><th>部门</th><th>费用期间</th><th>扣款金额(元)</th></tr></thead>' +
-        '<tbody>' + rows + '</tbody></table>' +
+        '<div class="table-scroll"><table class="tbl"><thead><tr><th>工号</th><th>姓名</th><th>部门</th><th>费用期间</th><th>扣款金额(元)</th></tr></thead>' +
+        '<tbody>' + rows + '</tbody></table></div>' +
         (list.length > 40 ? '<div class="note-bar">仅显示前 40 户</div>' : '') +
         '</div>';
     }
 
-    return '<div class="view wide"><div class="body">' + body +
+    return '<div class="view wide"><div class="body">' +
+      ui().periodChips(d.periods(), period, 'finance.deduct') + body +
       '<div class="panel"><div class="ph">导出记录</div>' +
-      '<table class="tbl"><thead><tr><th>文件名</th><th>期间</th><th>条数</th><th>导出人</th><th>时间</th></tr></thead><tbody>' +
+      '<div class="table-scroll"><table class="tbl"><thead><tr><th>文件名</th><th>期间</th><th>条数</th><th>导出人</th><th>时间</th></tr></thead><tbody>' +
       '<tr><td>代扣清单_' + period + '.csv</td><td>' + period + '</td><td class="num">' + list.length + '</td><td>财务</td><td class="num">' + U.fmtDT(U.nowISO()) + '</td></tr>' +
-      '</tbody></table></div>' +
+      '</tbody></table></div></div>' +
       '</div></div>';
   };
 })(typeof window !== 'undefined' ? window : globalThis);
