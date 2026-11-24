@@ -265,6 +265,26 @@ textarea:focus { border-color: var(--pri); background: #fff; box-shadow: 0 0 0 4
 .detail-table tr + tr { border-top: 1px solid rgba(15, 23, 42, .06); }
 
 /* ---------- 后台 ---------- */
+/* 账期选择器 */
+.periodbar {
+  display: inline-flex; align-items: center; gap: 6px; margin-bottom: 14px;
+  padding: 5px 6px; border-radius: 999px; flex-wrap: wrap;
+  background: rgba(255, 255, 255, .62);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, .7);
+  box-shadow: var(--shadow-1);
+}
+.pb-lab { font-size: 11px; color: var(--sub); padding: 0 4px 0 8px; }
+.pchip {
+  border: 0; background: transparent; padding: 7px 14px; border-radius: 999px;
+  font-size: 12.5px; color: #4a566b; font-variant-numeric: tabular-nums;
+  transition: background .15s ease, color .15s ease, transform .12s ease;
+}
+.pchip:hover { background: rgba(47, 107, 255, .08); }
+.pchip:active { transform: scale(.96); }
+.pchip.on { background: var(--pri); color: #fff; font-weight: 600; box-shadow: 0 6px 14px rgba(47, 107, 255, .25); }
+
 .subnav {
   display: inline-flex; gap: 4px; margin-bottom: 16px; padding: 5px;
   border-radius: 14px;
@@ -295,6 +315,21 @@ textarea:focus { border-color: var(--pri); background: #fff; box-shadow: 0 0 0 4
 }
 .panel .ph .r { margin-left: auto; display: flex; gap: 8px; align-items: center; }
 .tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; background: transparent; }
+
+/* 宽表格在手机上横向滑动，而不是被页面裁掉 */
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  background:
+    linear-gradient(to right, rgba(255, 255, 255, 0) 92%, rgba(15, 23, 42, .05)) right / 24px 100% no-repeat;
+}
+.table-scroll::-webkit-scrollbar { height: 6px; }
+.table-scroll::-webkit-scrollbar-thumb { background: rgba(15, 23, 42, .18); border-radius: 99px; }
+.table-scroll::-webkit-scrollbar-track { background: transparent; }
+.table-scroll > .tbl { min-width: 100%; }
 .tbl th {
   text-align: left; font-weight: 600; color: var(--sub); font-size: 11.5px;
   padding: 10px 12px; background: rgba(255, 255, 255, .5);
@@ -365,4 +400,87 @@ textarea:focus { border-color: var(--pri); background: #fff; box-shadow: 0 0 0 4
 @media (max-width: 720px) {
   .kpis { grid-template-columns: repeat(2, 1fr); }
   .tbl { font-size: 12px; }
+}
+
+/* ---------- 楼栋明细：概览 + 楼层分组 + 房间卡 ---------- */
+.ovcard {
+  display: grid; grid-template-columns: 180px 1fr; grid-template-rows: auto auto;
+  gap: 12px 22px; align-items: center;
+  background: rgba(255, 255, 255, .84);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, .78);
+  border-radius: var(--r); padding: 18px 20px;
+  box-shadow: var(--shadow-1), 0 12px 30px rgba(16, 24, 40, .07);
+  margin-bottom: 14px;
+}
+.ov-left { grid-row: 1 / span 2; }
+.ov-pct { font-size: 38px; font-weight: 800; letter-spacing: -1.4px; line-height: 1.1; }
+.ov-pct small { font-size: 14px; font-weight: 700; color: var(--sub); margin-left: 2px; letter-spacing: 0; }
+.ov-lab { font-size: 11.5px; color: var(--sub); margin: 2px 0 9px; }
+.ov-bar { height: 8px; }
+.ov-grid { grid-column: 2; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.ov-item {
+  display: flex; flex-direction: column; gap: 1px; padding: 9px 12px;
+  border-radius: 12px; background: rgba(15, 23, 42, .035);
+}
+.ov-item.warn { background: rgba(181, 71, 8, .09); }
+.ov-item.warn b { color: #b02c08; }
+.ov-k { font-size: 10.5px; color: var(--sub); }
+.ov-item b { font-size: 19px; font-weight: 800; letter-spacing: -.5px; }
+.ov-u { font-size: 10px; color: #98a2b3; }
+.ov-amt { grid-column: 2; display: flex; align-items: baseline; gap: 8px; }
+.ov-amt b { font-size: 21px; font-weight: 800; color: #c4320a; letter-spacing: -.6px; }
+
+.filterbar {
+  display: inline-flex; gap: 3px; padding: 4px; margin-bottom: 12px; flex-wrap: wrap;
+  border-radius: 12px; background: rgba(255, 255, 255, .6);
+  border: 1px solid rgba(255, 255, 255, .72);
+}
+.filterbar button {
+  border: 0; background: transparent; padding: 6px 13px; border-radius: 9px;
+  font-size: 12px; color: #4a566b; transition: background .15s ease, color .15s ease;
+}
+.filterbar button:hover { background: rgba(47, 107, 255, .08); }
+.filterbar button.on { background: var(--pri); color: #fff; font-weight: 600; }
+.bld-caption { font-size: 12px; color: var(--sub); margin: 0 4px 12px; }
+
+.floorblock { margin-bottom: 18px; }
+.floorhead {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 4px 8px; margin-bottom: 10px;
+  border-bottom: 1px solid rgba(15, 23, 42, .07);
+}
+.floorhead b { font-size: 14px; letter-spacing: .2px; }
+.fh-sub { margin-left: auto; font-size: 11.5px; color: var(--sub); }
+.fh-exc { color: #b02c08; font-style: normal; font-weight: 600; }
+
+.roomgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(228px, 1fr)); gap: 10px; }
+.rmcard {
+  background: rgba(255, 255, 255, .8);
+  border: 1px solid rgba(255, 255, 255, .76);
+  border-radius: 14px; padding: 11px 13px;
+  box-shadow: var(--shadow-1);
+  transition: transform .15s cubic-bezier(.22, .8, .24, 1), box-shadow .2s ease;
+}
+.rmcard:hover { transform: translateY(-1px); box-shadow: var(--shadow-1), 0 10px 24px rgba(16, 24, 40, .08); }
+.rmcard.is-exc { border-color: rgba(196, 50, 10, .22); background: rgba(255, 246, 243, .92); }
+.rmcard.is-done { border-color: rgba(15, 157, 110, .2); }
+.rm-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.rm-no { font-size: 13.5px; letter-spacing: .2px; }
+.rm-name { font-size: 12px; color: #4a566b; margin: 3px 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rm-usage { display: flex; gap: 12px; font-size: 11.5px; color: var(--sub); }
+.rm-usage b { color: var(--ink); font-size: 13px; font-variant-numeric: tabular-nums; }
+.rm-foot { display: flex; align-items: baseline; justify-content: space-between; margin-top: 7px; }
+.rm-amt { font-size: 14px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.rm-amt.none { font-weight: 500; font-size: 11.5px; color: #98a2b3; }
+.rm-read { font-size: 10.5px; color: #98a2b3; }
+
+@media (max-width: 720px) {
+  .ovcard { grid-template-columns: 1fr; gap: 12px; }
+  .ov-left { grid-row: auto; display: flex; align-items: baseline; gap: 12px; }
+  .ov-lab { margin: 0; }
+  .ov-bar { display: none; }
+  .ov-grid { grid-column: 1; grid-template-columns: repeat(2, 1fr); }
+  .ov-amt { grid-column: 1; }
 }
