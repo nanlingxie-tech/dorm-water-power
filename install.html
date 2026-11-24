@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>安装到手机桌面 · 宿舍水电费管理</title>
+<meta name="theme-color" content="#0d1420" />
+<style>
+  :root{--pri:#2f6bff;--ink:#101828;--sub:#667085;--line:#e8ebf1;--bg:#f4f6fa;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:520px;margin:0 auto;padding:22px 16px 40px}
+  .hero{background:linear-gradient(150deg,#2f6bff,#4d86ff);color:#fff;border-radius:18px;padding:20px;margin-bottom:14px}
+  .hero h1{margin:0;font-size:19px}
+  .hero p{margin:6px 0 0;font-size:12.5px;color:#d7e4ff}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+  .card h2{margin:0 0 10px;font-size:15px;display:flex;align-items:center;gap:8px}
+  .tag{font-size:11px;font-weight:700;color:#fff;background:var(--pri);border-radius:6px;padding:2px 7px}
+  ol{margin:0;padding-left:20px}
+  li{font-size:13.5px;margin-bottom:9px}
+  li b{color:var(--pri)}
+  .note{font-size:12px;color:var(--sub);background:#fffbe8;border:1px solid #f6e6b4;border-radius:12px;padding:11px 13px;margin-top:10px}
+  .btn{display:block;text-align:center;background:var(--pri);color:#fff;text-decoration:none;
+    border-radius:14px;padding:14px;font-weight:700;font-size:15px;margin-top:16px;
+    box-shadow:0 6px 16px rgba(47,107,255,.26)}
+  .installed{display:none;background:#e7f7f1;color:#0f9d6e;border:1px solid #bfe9d8;
+    border-radius:12px;padding:12px 14px;font-size:13px;font-weight:600;margin-bottom:12px}
+  .kbd{background:#f1f3f7;border-radius:5px;padding:1px 6px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <h1>把「宿舍水电费」装到桌面</h1>
+    <p>装好后像 App 一样全屏打开，不用每次输网址；断网也能用。</p>
+  </div>
+
+  <div id="installed" class="installed">✅ 已经装好了，返回到应用即可全屏使用。</div>
+
+  <div class="card">
+    <h2><span class="tag">安卓</span> Chrome / Edge</h2>
+    <ol>
+      <li>用 <b>Chrome</b> 打开应用（不要用微信里打开）</li>
+      <li>点右上角 <b>⋮</b>（三个点）</li>
+      <li>选 <b>「添加到主屏幕」</b> 或 <b>「安装应用」</b></li>
+      <li>点「添加」，桌面就会出现图标</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2><span class="tag">iPhone</span> Safari</h2>
+    <ol>
+      <li>必须用 <b>Safari</b> 打开（微信内不支持安装）</li>
+      <li>点底部中间的 <b>分享按钮</b>（方框带向上箭头）</li>
+      <li>往下滑，选 <b>「添加到主屏幕」</b></li>
+      <li>点右上角「添加」</li>
+    </ol>
+    <div class="note">如果找不到「添加到主屏幕」：确认是不是用 Safari 打开的，微信、QQ、钉钉内的浏览器都不支持。</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="tag">提示</span> 为什么值得装</h2>
+    <ol>
+      <li>全屏运行，没有地址栏，和 App 一样</li>
+      <li>桌面有独立图标，一点就开</li>
+      <li>首次打开后会缓存，<b>断网也能抄表</b></li>
+      <li>不占存储空间，不经过应用商店</li>
+    </ol>
+  </div>
+
+  <a class="btn" id="back" href="./index.html">打开应用</a>
+</div>
+
+<script>
+  (function () {
+    var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+      || window.navigator.standalone === true;
+    if (standalone) document.getElementById('installed').style.display = 'block';
+    // 带上来源参数，方便从扫码页返回
+    if (location.search) {
+      document.getElementById('back').href = './index.html' + location.search;
+    }
+  })();
+</script>
+</body>
+</html>
