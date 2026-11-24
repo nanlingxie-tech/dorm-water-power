@@ -214,7 +214,8 @@
     if (!bill) {
       return '<div class="view">' +
         ui().hdr({ title: '账单明细', sub: want || '', back: back }) +
-        '<div class="body">' + ui().empty('该账期没有账单', '可能尚未出账或已作废', 'nav:employee.history', '返回往期') + '</div></div>';
+        '<div class="body">' + ui().periodChips(d.periods(), want, 'employee.detail') +
+        ui().empty('该账期没有账单', '可能尚未出账或已作废', 'nav:employee.history', '返回往期') + '</div></div>';
     }
 
     var e = d.readingOne(bill.period, emp.roomId, 'e');
@@ -223,6 +224,7 @@
     return '<div class="view">' +
       ui().hdr({ title: '账单明细', sub: bill.period + ' · ' + emp.roomId, back: back }) +
       '<div class="body">' +
+      ui().periodChips(d.periods(), bill.period, 'employee.detail') +
       '<section class="card">' +
       '<table class="detail-table">' +
       '<thead><tr><th>项目</th><th>上期</th><th>本期</th><th>用量</th><th style="text-align:right">金额</th></tr></thead>' +
