@@ -53,15 +53,15 @@
     return '<div class="view wide"><div class="body">' + nav('approvals') +
       '<div class="panel"><div class="ph">待审批（' + pending.length + '）</div>' +
       '<div class="note-bar">物业管家提交的单价变更，必须经管理员批准后才会生效；批准前系统仍按原单价出账。</div>' +
-      '<table class="tbl"><thead><tr><th>楼栋</th><th>账期</th><th>电价（元/度）</th><th>水价（元/吨）</th>' +
+      '<div class="table-scroll"><table class="tbl"><thead><tr><th>楼栋</th><th>账期</th><th>电价（元/度）</th><th>水价（元/吨）</th>' +
       '<th>变更原因</th><th>申请人</th><th>操作</th></tr></thead>' +
       '<tbody>' + (rows || '<tr><td colspan="7" class="muted center" style="padding:26px">没有待审批事项</td></tr>') +
-      '</tbody></table></div>' +
+      '</tbody></table></div></div>' +
       '<div class="panel"><div class="ph">处理记录</div>' +
-      '<table class="tbl"><thead><tr><th>楼栋</th><th>账期</th><th>新单价（电/水）</th><th>结果</th>' +
+      '<div class="table-scroll"><table class="tbl"><thead><tr><th>楼栋</th><th>账期</th><th>新单价（电/水）</th><th>结果</th>' +
       '<th>审批人</th><th>时间</th><th>备注</th></tr></thead>' +
       '<tbody>' + (history || '<tr><td colspan="7" class="muted center" style="padding:22px">暂无记录</td></tr>') +
-      '</tbody></table></div>' +
+      '</tbody></table></div></div>' +
       '</div></div>';
   };
 })(typeof window !== 'undefined' ? window : globalThis);
