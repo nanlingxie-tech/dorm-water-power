@@ -23,6 +23,15 @@
     /* ---------------- 查询 ---------------- */
     period: function () { return D().meta.currentPeriod; },
 
+    /** 系统里出现过的所有账期，倒序（最新在前） */
+    periods: function () {
+      var set = {};
+      (D().prices || []).forEach(function (p) { if (p.period) set[p.period] = 1; });
+      (D().bills || []).forEach(function (b) { if (b.period) set[b.period] = 1; });
+      (D().readings || []).forEach(function (r) { if (r.period) set[r.period] = 1; });
+      return Object.keys(set).sort().reverse();
+    },
+
     roomOf: function (id) {
       return D().rooms.filter(function (r) { return r.id === id; })[0] || null;
     },
