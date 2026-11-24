@@ -51,15 +51,15 @@
       '<div class="panel"><div class="ph">楼栋管理</div>' +
       '<div class="note-bar">本页仅<b>物业管家</b>可修改。改名称只影响显示，不影响抄表记录与账单；' +
       '改楼层数/每层房间数会增减房间，已有住户或抄表数据的房间不会被删除。</div>' +
-      '<table class="tbl"><thead><tr><th>楼栋名称</th><th>编号</th><th>楼层数</th><th>每层房间数</th><th>房间总数</th><th>在住</th><th>操作</th></tr></thead>' +
-      '<tbody>' + (rows || '<tr><td colspan="7" class="muted center">还没有楼栋</td></tr>') + '</tbody></table></div>' +
+      '<div class="table-scroll"><table class="tbl"><thead><tr><th>楼栋名称</th><th>编号</th><th>楼层数</th><th>每层房间数</th><th>房间总数</th><th>在住</th><th>操作</th></tr></thead>' +
+      '<tbody>' + (rows || '<tr><td colspan="7" class="muted center">还没有楼栋</td></tr>') + '</tbody></table></div></div>' +
       '</div></div>';
   };
 
   /* ==================== 单价设置（按楼栋 + 审批） ==================== */
-  P['manager.price'] = function () {
+  P['manager.price'] = function (ctx) {
     var d = dom();
-    var period = d.period();
+    var period = (ctx && ctx.params && ctx.params.period) || d.period();
     var list = d.buildingList();
 
     var rows = list.map(function (b) {
@@ -93,28 +93,29 @@
       }).join('');
 
     return '<div class="view wide"><div class="body">' + mgrNav('price') +
+      ui().periodChips(d.periods(), period, 'manager.price') +
       '<div class="panel"><div class="ph">各楼栋单价（' + period + '）</div>' +
-      '<div class="note-bar">每个楼栋单独定价；提交后进入待审批，<b>管理员批准前不生效</b>，系统仍按原单价出账。</div>' +
-      '<table class="tbl"><thead><tr><th>楼栋</th><th>当前电价</th><th>当前水价</th>' +
+      '<div class="note-bar">每个楼栋单独定价；提交后进入待审批，<b>管理员批准前不生效</b>，系统仍按原单价出账。<b>表格可左右滑动</b>。</div>' +
+      '<div class="table-scroll"><table class="tbl"><thead><tr><th>楼栋</th><th>当前电价</th><th>当前水价</th>' +
       '<th>新电价（元/度）</th><th>新水价（元/吨）</th><th>变更原因</th><th>操作</th></tr></thead>' +
-      '<tbody>' + (rows || '<tr><td colspan="7" class="muted center">还没有楼栋</td></tr>') + '</tbody></table></div>' +
+      '<tbody>' + (rows || '<tr><td colspan="7" class="muted center">还没有楼栋</td></tr>') + '</tbody></table></div></div>' +
       '<div class="panel"><div class="ph">价格历史（近 12 条）</div>' +
-      '<table class="tbl"><thead><tr><th>楼栋</th><th>账期</th><th>电价</th><th>水价</th><th>备注</th></tr></thead>' +
+      '<div class="table-scroll"><table class="tbl"><thead><tr><th>楼栋</th><th>账期</th><th>电价</th><th>水价</th><th>备注</th></tr></thead>' +
       '<tbody>' + (history || '<tr><td colspan="5" class="muted center" style="padding:22px">暂无记录</td></tr>') +
-      '</tbody></table></div>' +
+      '</tbody></table></div></div>' +
       '</div></div>';
   };
 
   /* ==================== 账单管理 ==================== */
-  P['manager.bills'] = function () {
+  P['manager.bills'] = function (ctx) {
     var d = dom();
-    var period = d.period();
+    var period = (ctx && ctx.params && ctx.params.period) || d.period();
     var bills = d.billsOf(period);
-    var s = d.stats();
+    var s = d.stats(period);
 
     if (!bills.length) {
       var ready = s.approved;
-      return '<div class="view wide"><div class="body">' + mgrNav('bills') +
+      return '<div class="view wide"><div class="body">' + mgrNav('bills') + ui().periodChips(d.periods(), period, 'manager.bills') +
         '<div class="panel"><div class="ph">本期账单（' + period + '）</div>' +
         '<div class="empty">' +
         '<div class="empty-ic">' + ui().icon('doc', 26) + '</div>' +
@@ -144,7 +145,7 @@
         '<td>' + ui().chip(st[0], st[1]) + '</td></tr>';
     }).join('');
 
-    return '<div class="view wide"><div class="body">' + mgrNav('bills') +
+    return '<div class="view wide"><div class="body">' + mgrNav('bills') + ui().periodChips(d.periods(), period, 'manager.bills') +
       '<div class="kpis">' +
       '<div class="kpi"><div class="lab">已生成</div><div class="val num">' + bills.length + '<small>户</small></div><div class="trend">应收 ' + ui().money(s.billTotal) + '</div></div>' +
       '<div class="kpi"><div class="lab">待确认</div><div class="val num">' + s.public + '<small>户</small></div><div class="trend">公示期中</div></div>' +
@@ -154,8 +155,8 @@
       '<div class="panel"><div class="ph">本期账单（' + period + '）' +
       '<div class="r">' + ui().chip('公示期 3 天', 'pri') +
       '<button class="btn sm ghost" data-act="skip-publicity">模拟公示期结束</button></div></div>' +
-      '<table class="tbl"><thead><tr><th>房间</th><th>住户</th><th>用电(度)</th><th>用水(吨)</th><th>应缴</th><th>状态</th></tr></thead>' +
-      '<tbody>' + rows + '</tbody></table>' +
+      '<div class="table-scroll"><table class="tbl"><thead><tr><th>房间</th><th>住户</th><th>用电(度)</th><th>用水(吨)</th><th>应缴</th><th>状态</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table></div>' +
       (bills.length > 40 ? '<div class="note-bar">仅显示前 40 户，其余可在导出中查看</div>' : '') +
       '</div></div></div>';
   };
