@@ -11,7 +11,7 @@
     'gen-bills', 'confirm-bill', 'open-appeal', 'appeal-type', 'appeal-submit', 'export', 'import',
     'reset', 'skip-publicity', 'export-csv', 'mark-deducted', 'set-price', 'toast', 'open-install',
     'ocr-upload', 'bld-save', 'price-submit', 'price-approve', 'price-reject',
-    'room-submit', 'room-approve', 'room-reject'
+    'room-submit', 'room-approve', 'room-reject', 'search', 'search-clear', 'emp'
   ];
 
   // 识图：上传照片 → 自动读数 → 回填（可手改）
@@ -76,6 +76,24 @@
         });
       }
       App.router.go(key, params);
+      return;
+    }
+
+    if (cmd === 'search' || cmd === 'search-clear') {
+      var skey = parts.slice(1).join(':');
+      var qEl = document.getElementById('qInput');
+      var extraStr = qEl ? (qEl.getAttribute('data-extra') || '') : '';
+      var qp = {};
+      extraStr.split('&').forEach(function (kv) {
+        if (!kv) return;
+        var i = kv.indexOf('=');
+        if (i > 0) qp[decodeURIComponent(kv.slice(0, i))] = decodeURIComponent(kv.slice(i + 1));
+      });
+      if (cmd === 'search' && qEl) {
+        var qv = String(qEl.value || '').trim();
+        if (qv) qp.q = qv;
+      }
+      App.router.go(skey, qp);
       return;
     }
 
@@ -166,17 +184,26 @@
         return;
       }
       var code = parts.slice(1).join(':');
+      var b = App.domain.buildingOf(code);
+      if (!b) { App.ui.toast('楼栋不存在'); return; }
       var nEl = document.getElementById('bldName-' + code);
       var fEl = document.getElementById('bldFloors-' + code);
       var pEl = document.getElementById('bldPer-' + code);
+
       var msgs = [];
-      var r1 = App.domain.renameBuilding(code, nEl ? nEl.value : '', '王管家');
-      msgs.push(r1.msg);
-      if (r1.ok) {
-        var r2 = App.domain.setBuildingSize(code, fEl ? fEl.value : 0, pEl ? pEl.value : 0, '王管家');
-        msgs.push(r2.msg);
+      // 名称：只有真的改了才提交
+      var newName = String(nEl ? nEl.value : '').trim();
+      if (newName && newName !== b.name) {
+        msgs.push(App.domain.renameBuilding(code, newName, '王管家').msg);
       }
-      App.ui.toast(msgs.join('；'));
+      // 规模：只有真的改了才提交
+      var nf = Math.round(Number(fEl ? fEl.value : b.floors));
+      var np = Math.round(Number(pEl ? pEl.value : b.perFloor));
+      if (!isNaN(nf) && !isNaN(np) && (nf !== b.floors || np !== b.perFloor)) {
+        msgs.push(App.domain.setBuildingSize(code, nf, np, '王管家').msg);
+      }
+
+      App.ui.toast(msgs.length ? msgs.join('；') : '没有需要保存的修改');
       App.router.render();
       return;
     }
@@ -200,6 +227,14 @@
     }
 
     if (cmd === 'role') { A.setRole(arg); return; }
+
+    if (cmd === 'emp') {
+      App.store.data.session.employeeId = arg;
+      App.store.commit();
+      App.ui.toast('已切换到该住户视角');
+      App.router.render();
+      return;
+    }
 
     if (cmd === 'open-reading') {
       var rid = parts.slice(1).join(':');
@@ -404,9 +439,19 @@
       return;
     }
     if (cmd === 'export-csv') {
-      var csv = App.domain.exportDeductCSV(App.domain.period());
-      App.util.download('代扣清单_' + App.domain.period() + '.csv', csv, 'text/csv;charset=utf-8');
-      App.ui.toast('已导出代扣清单');
+      var ep = parts.slice(1).join(':') || App.domain.period();
+      var csv = App.domain.exportDeductCSV(ep);
+      var rows0 = App.domain.deductList(ep);
+      if (!App.store.data.exports) App.store.data.exports = [];
+      var log = {
+        id: 'EX' + Date.now(), period: ep, count: rows0.length, by: '财务',
+        at: App.util.nowISO(), file: '代扣清单_' + ep + '.csv'
+      };
+      App.store.data.exports.unshift(log);
+      App.store.commit();
+      App.util.download(log.file, csv, 'text/csv;charset=utf-8');
+      App.ui.toast('已导出并记入导出记录');
+      App.router.render();
       return;
     }
     if (cmd === 'mark-deducted') {
@@ -444,6 +489,12 @@
     // 识图文件选择
     document.addEventListener('change', function (e) {
       if (e.target && e.target.id === 'ocrFile') A.handleOcrFile(e.target);
+    });
+    // 搜索框回车 = 点搜索
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' || !e.target || e.target.id !== 'qInput') return;
+      e.preventDefault();
+      A.handle('search:' + (e.target.getAttribute('data-key') || ''));
     });
     window.addEventListener('error', function (ev) {
       App.ui.toast('出错了：' + (ev.message || '未知'));
