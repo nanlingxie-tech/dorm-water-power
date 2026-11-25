@@ -279,13 +279,15 @@
         return { ok: false, msg: '该房间已提交审核，需主管退回后才能修改' };
       }
 
+      var label = o.meterType === 'w' ? '水表' : '电表';
       var v = U.validate({
         prevReading: prev.reading,
         reading: o.reading,
         lastUsage: prev.usage,
         hasPhoto: !!o.photoId,
         duplicate: !!(existing && existing.status === 'pending' && o.isResubmit !== true),
-        unit: o.meterType === 'w' ? '吨' : '度'
+        unit: o.meterType === 'w' ? '吨' : '度',
+        label: label
       });
       if (v.block) {
         return { ok: false, msg: v.warnings[0].msg, warnings: v.warnings };
@@ -382,7 +384,9 @@
         else if (ex && ex.locked) problems.push('该房间已提交审核，需主管退回后才能修改');
         var v = U.validate({
           prevReading: prev.reading, reading: it.reading,
-          lastUsage: prev.usage, hasPhoto: !!it.photoId
+          lastUsage: prev.usage, hasPhoto: !!it.photoId,
+          unit: it.meterType === 'w' ? '吨' : '度',
+          label: it.meterType === 'w' ? '水表' : '电表'
         });
         if (v.block) problems.push(v.warnings[0].msg);
         if (U.needNote(v.warnings)) needNote = true;
@@ -667,9 +671,10 @@
       if (r.status !== 'pending') return { ok: false, msg: '该记录不在待复核状态' };
       r.status = 'approved';
       r.approvedAt = now();
+      var bill = DOM._ensureBill(r.period, r.roomId, actor);
       audit('reading.approve', r.roomId + '/' + r.meterType, 'pending', 'approved', '', actor);
       App.store.commit();
-      return { ok: true, msg: '已通过' };
+      return { ok: true, msg: '已通过', bill: bill };
     },
 
     rejectReading: function (id, reason, actor) {
@@ -693,9 +698,11 @@
       });
       if (!list.length) return { ok: false, msg: '该房间没有待复核记录' };
       list.forEach(function (r) { r.status = 'approved'; r.approvedAt = now(); });
+      // 两表都通过 → 立即出账，账单进入物业管家的"待确认"
+      var bill = DOM._ensureBill(period, roomId, actor);
       audit('reading.approveRoom', roomId, 'pending', list.length, '', actor);
       App.store.commit();
-      return { ok: true, count: list.length };
+      return { ok: true, count: list.length, bill: bill };
     },
 
     rejectRoom: function (roomId, reason, actor) {
@@ -730,6 +737,31 @@
     },
 
     /* ---------------- 出账 ---------------- */
+    /** 内部：某房间两表都复核通过后，立即出一张待确认账单（已存在则跳过） */
+    _ensureBill: function (period, roomId, actor) {
+      if (DOM.billOf(period, roomId)) return null;
+      var room = DOM.roomOf(roomId);
+      if (!room || room.status !== 'occupied') return null;
+      if (DOM.roomState(roomId, period) !== 'approved') return null;
+      var price = DOM.priceOf(period, room.bld);
+      if (!price) return null;
+      var e = DOM.readingOne(period, roomId, 'e');
+      var w = DOM.readingOne(period, roomId, 'w');
+      if (!e || !w) return null;
+      var amt = U.calcBill(e.usage, w.usage, price.electricity, price.water);
+      var pubDays = D().meta.publicityDays || 3;
+      var genAt = now();
+      var bill = {
+        id: 'B-' + period + '-' + roomId, period: period, roomId: roomId, employeeId: room.employeeId,
+        usageE: e.usage, usageW: w.usage, priceE: price.electricity, priceW: price.water,
+        amountE: amt.amountE, amountW: amt.amountW, total: amt.total,
+        status: 'public', generatedAt: genAt, publicEndAt: U.addDays(genAt, pubDays), deductedAt: ''
+      };
+      D().bills.push(bill);
+      audit('bill.auto', period, roomId, String(amt.total), '', actor);
+      return bill;
+    },
+
     generateBills: function (period, actor) {
       period = period || DOM.period();
       var created = 0, total = 0, skipped = 0, noPrice = 0;
