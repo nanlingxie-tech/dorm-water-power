@@ -8,7 +8,17 @@
 
   /* ---------- 数字与金额 ---------- */
   // 用量统一保留 1 位小数（消除 1301.2-1234.5 的浮点尾巴）
-  U.round1 = function (n) {
+  /* 搜索命中：q 为空返回 true；否则在若干字段里做不区分大小写的包含匹配 */
+U.hit = function (q, parts) {
+  if (!q) return true;
+  var needle = String(q).trim().toLowerCase();
+  if (!needle) return true;
+  var hay = (parts || []).map(function (x) { return x == null ? '' : String(x); })
+    .join(' ').toLowerCase();
+  return hay.indexOf(needle) > -1;
+};
+
+U.round1 = function (n) {
     return Math.round((Number(n) || 0) * 10) / 10;
   };
 
@@ -96,6 +106,12 @@
     }
     if (o.duplicate) {
       add('V7', 'warn', '疑似重复提交，请确认是否已抄过');
+    }
+    // 加上"电表/水表"前缀，避免只看到"用量比上月高 234%"却不知道是哪块表
+    if (o.label) {
+      warnings = warnings.map(function (w) {
+        return { code: w.code, level: w.level, msg: o.label + '：' + w.msg };
+      });
     }
     return { block: block, warnings: warnings, usage: usage };
   };
