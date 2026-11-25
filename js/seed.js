@@ -265,6 +265,7 @@
       prices: prices,
       priceRequests: [],
       roomRequests: [],
+      exports: [],
       readings: readings,
       bills: bills,
       disputes: [],
