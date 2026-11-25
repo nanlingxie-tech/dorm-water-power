@@ -83,6 +83,11 @@ ul { padding: 0; list-style: none; }
   * { transition: none !important; }
 }
 
+
+/* 吸顶导航 + 内容之间留出安全间距，避免标题被遮住 */
+html { scroll-padding-top: 100px; }
+.view > .body { padding-top: 16px; }
+
 /* ---------- 排版 ---------- */
 .t1 { font-size: 11px; }
 .t2 { font-size: 13px; }
