@@ -50,22 +50,35 @@
   }
 
   /* ==================== 我的账单 ==================== */
-  P['employee.bill'] = function () {
+  P['employee.bill'] = function (ctx) {
     var d = dom();
     var picked = pickBill();
     var emp = picked.emp;
     var bill = picked.bill;
+    var want = ctx && ctx.params && ctx.params.period;
+    if (want) {
+      var wb = d.billOf(want, emp.roomId);
+      if (wb) bill = wb;
+    }
+    if (!bill) {
+      return '<div class="view">' +
+        ui().hdr({ title: '我的账单', back: 'nav:employee.trend' }) +
+        '<div class="body">' + ui().periodChips(d.periods(), want || d.period(), 'employee.bill') +
+        ui().empty('本期还没有账单', '抄表复核完成后会自动出账', 'nav:employee.history', '查看往期') +
+        '</div></div>';
+    }
 
     if (!bill) {
       return '<div class="view">' +
         '<div class="bill-hero"><div class="between"><div><h1 style="font-size:15px">我的账单</h1>' +
         '<p class="t1" style="color:#cfe0ff">' + emp.roomId + ' · ' + emp.name + '</p></div></div></div>' +
-        '<div class="body" style="margin-top:-20px">' +
+        '<div class="body">' +
         ui().empty('还没有账单', '账单生成后会显示在这里', 'nav:employee.trend', '查看用量趋势') +
         '</div>' +
         ui().tabbar([
           { label: '账单', icon: 'doc', act: 'nav:employee.bill', active: true },
-          { label: '趋势', icon: 'chart', act: 'nav:employee.trend' }
+          { label: '对账', icon: 'check', act: 'nav:employee.reconcile' },
+        { label: '趋势', icon: 'chart', act: 'nav:employee.trend' }
         ]) + '</div>';
     }
 
@@ -105,21 +118,32 @@
       .sort(function (a, b) { return a.period < b.period ? 1 : -1; }).slice(0, 3)
       .map(function (b) {
         var s2 = STATUS[b.status] || ['未知', 'todo'];
-        return '<div class="listline static"><span class="t2" style="flex:1">' + b.period + '</span>' +
+        return '<button class="listline" data-act="nav:employee.detail?period=' + b.period + '">' +
+          '<span class="t2" style="flex:1">' + b.period + '</span>' +
           '<span class="t2 num">' + ui().money(b.total) + '</span>' +
-          ui().chip(s2[0], s2[1]) + '</div>';
+          ui().chip(s2[0], s2[1]) +
+          '<span class="arrow">' + ui().icon('chev', 15) + '</span></button>';
       }).join('');
 
     return '<div class="view">' +
       '<div class="bill-hero"><div class="between">' +
       '<div><h1 style="font-size:15px">我的账单</h1>' +
       '<p class="t1" style="color:#cfe0ff">' + emp.roomId + ' · ' + emp.name + ' · ' + emp.dept + '</p></div>' +
-      ui().chip(bill.period, 'pri') + '</div></div>' +
-      '<div class="body" style="margin-top:-30px">' +
+      ui().chip(bill.status === 'public' ? '待确认' : (st[0] || ''), st[1]) + '</div>' +
+      '<div class="bill-period">' + bill.period.replace('-', ' 年 ') + ' 月</div>' +
+      '<div class="t1" style="color:#cfe0ff">费用期间 ' + U.periodRange(bill.period).start + ' 至 ' + U.periodRange(bill.period).end + '</div>' +
+      '</div>' +
+      '<div class="body">' +
+      ui().periodChips(d.periods(), bill.period, 'employee.bill') +
+      (bill.status === 'public'
+        ? '<section class="card recon-banner"><div class="between"><b>本期账单待你确认</b>' +
+          ui().chip('待对账', 'warn') + '</div>' +
+          '<div class="t1 muted" style="margin:4px 0 10px">确认前不会代扣；有异议请先申诉，申诉期间同样不扣款。</div>' +
+          '<button class="btn" data-act="confirm-bill:' + bill.id + '">确认无误，去对账</button></section>'
+        : '') +
       '<section class="card">' +
       '<div class="between"><span class="t1 muted">本期应缴电费 + 水费</span>' + ui().chip(st[0], st[1]) + '</div>' +
       '<div class="amount num">' + ui().money(bill.total) + '</div>' +
-      '<div class="t1 muted">费用期间 ' + U.periodRange(bill.period).start + ' 至 ' + U.periodRange(bill.period).end + '</div>' +
       '<div class="dashed"></div>' +
       '<div class="line-item"><span>' + ui().icon('bolt', 13) + ' 电费</span>' +
       '<span class="num">' + bill.usageE + ' 度 × ' + (bill.priceE / 100).toFixed(2) + ' = <b>' + ui().money(bill.amountE) + '</b></span></div>' +
@@ -142,6 +166,52 @@
       '</div>' +
       ui().tabbar([
         { label: '账单', icon: 'doc', act: 'nav:employee.bill', active: true },
+        { label: '对账', icon: 'check', act: 'nav:employee.reconcile' },
+        { label: '趋势', icon: 'chart', act: 'nav:employee.trend' }
+      ]) +
+      '</div>';
+  };
+
+  /* ==================== 对账中心 ==================== */
+  P['employee.reconcile'] = function () {
+    var d = dom();
+    var emp = me();
+    var bills = App.store.data.bills.filter(function (b) { return b.roomId === emp.roomId; })
+      .sort(function (a, b) { return a.period < b.period ? 1 : -1; });
+
+    var todo = bills.filter(function (b) { return b.status === 'public'; });
+    var total = todo.reduce(function (s, b) { return s + b.total; }, 0);
+
+    var rows = bills.map(function (b) {
+      var st = STATUS[b.status] || ['未知', 'todo'];
+      var act = b.status === 'public'
+        ? '<button class="btn sm" data-act="confirm-bill:' + b.id + '">确认对账</button>'
+        : (b.status === 'confirmed' ? ui().chip('已确认', 'done') : ui().chip(st[0], st[1]));
+      return '<div class="recline">' +
+        '<div class="rl-main"><b class="t2">' + b.period + '</b>' +
+        '<span class="t1 muted">电 ' + b.usageE + ' 度 · 水 ' + b.usageW + ' 吨</span></div>' +
+        '<div class="rl-amt num">' + ui().money(b.total) + '</div>' +
+        '<div class="rl-act">' + act + '</div>' +
+        '</div>';
+    }).join('');
+
+    return '<div class="view">' +
+      ui().hdr({ title: '对账中心', sub: emp.roomId + ' · ' + emp.name, back: 'nav:employee.bill' }) +
+      '<div class="body">' +
+      '<section class="card recon-sum">' +
+      '<div class="between"><span class="t1 muted">待确认账单</span>' +
+      (todo.length ? ui().chip('待对账 ' + todo.length + ' 笔', 'warn') : ui().chip('已全部确认', 'done')) + '</div>' +
+      '<div class="amount num">' + ui().money(total) + '</div>' +
+      '<div class="t1 muted">' +
+      (todo.length ? '确认后即进入工资代扣流程；有异议请先申诉，申诉期间不扣款。' : '本期没有待确认的账单。') +
+      '</div></section>' +
+      '<div class="sec-title"><span>全部账单</span></div>' +
+      '<section class="card" style="padding:4px 12px">' + (rows || ui().empty('还没有账单')) + '</section>' +
+      '</div>' +
+      ui().tabbar([
+        { label: '账单', icon: 'doc', act: 'nav:employee.bill' },
+        { label: '对账', icon: 'check', act: 'nav:employee.reconcile', active: true },
+        { label: '对账', icon: 'check', act: 'nav:employee.reconcile' },
         { label: '趋势', icon: 'chart', act: 'nav:employee.trend' }
       ]) +
       '</div>';
@@ -198,6 +268,7 @@
       '</div>' +
       ui().tabbar([
         { label: '账单', icon: 'doc', act: 'nav:employee.bill', active: true },
+        { label: '对账', icon: 'check', act: 'nav:employee.reconcile' },
         { label: '趋势', icon: 'chart', act: 'nav:employee.trend' }
       ]) +
       '</div>';
@@ -286,6 +357,7 @@
       '</section></div>' +
       ui().tabbar([
         { label: '账单', icon: 'doc', act: 'nav:employee.bill' },
+        { label: '对账', icon: 'check', act: 'nav:employee.reconcile' },
         { label: '趋势', icon: 'chart', act: 'nav:employee.trend', active: true }
       ]) +
       '</div>';
