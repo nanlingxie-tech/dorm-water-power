@@ -7,6 +7,7 @@
   var ICONS = {
     back: '<path d="M15 18l-6-6 6-6"/>',
     chev: '<path d="M9 18l6-6-6-6"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
     list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
     doc: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
     user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
@@ -142,12 +143,33 @@
       return '<button data-act="role:' + r.key + '" class="' + (r.key === role ? 'on' : '') + '">' +
         '<span>' + r.name + '</span>' + (r.key === role ? ui.icon('check', 14) : '') + '</button>';
     }).join('');
+
+    // 员工视角：可切换演示住户，否则永远只能看到同一个人的账单
+    var empBlock = '';
+    if (role === 'employee') {
+      var data = (App.store && App.store.data) || {};
+      var session = data.session || {};
+      var list = (data.employees || []).filter(function (e) {
+        return (data.rooms || []).some(function (r) { return r.id === e.roomId; });
+      }).slice(0, 6);
+      if (list.length) {
+        empBlock = '<div class="menu-sep"></div><div class="menu-t">演示住户（切换看不同人的账单）</div>' +
+          list.map(function (e) {
+            var on = session.employeeId === e.id;
+            return '<button data-act="emp:' + e.id + '" class="' + (on ? 'on' : '') + '">' +
+              '<span>' + e.name + '<span style="opacity:.6"> · ' + e.roomId + '</span></span>' +
+              (on ? ui.icon('check', 14) : '') + '</button>';
+          }).join('');
+      }
+    }
+
     return '<div class="topbar">' +
       '<div class="brand"><i></i>宿舍水电费</div>' +
       '<details class="roleswitch">' +
       '<summary>演示：<b>' + cur.short + '</b> ' + ui.icon('chev', 12) + '</summary>' +
       '<div class="menu">' +
       '<div class="menu-t">切换角色（数据不变，视角变化）</div>' + items +
+      empBlock +
       '<div class="menu-sep"></div>' +
       '<button data-act="open-install">' + ui.icon('down', 14) + ' 安装到手机桌面</button>' +
       '<button data-act="export">' + ui.icon('download', 14) + ' 导出备份</button>' +
@@ -180,6 +202,24 @@
         'data-act="nav:' + key + '?period=' + p + qs + '">' + m + '月</button>';
     }).join('');
     return '<div class="periodbar"><span class="pb-lab">账期</span>' + chips + '</div>';
+  };
+
+  // 搜索框：回车或点「搜索」都生效；带清空按钮
+  ui.searchBar = function (o) {
+    o = o || {};
+    var E = App.util.esc;
+    var val = o.value || '';
+    var qs = Object.keys(o.extra || {}).map(function (k) {
+      return encodeURIComponent(k) + '=' + encodeURIComponent(o.extra[k]);
+    }).join('&');
+    return '<div class="searchbar">' +
+      '<span class="sb-ic">' + ui.icon('search', 16) + '</span>' +
+      '<input id="qInput" class="sb-input" type="search" value="' + E(val) + '" ' +
+      'placeholder="' + E(o.placeholder || '搜房间号 / 住户姓名 / 工号') + '" ' +
+      'data-key="' + o.key + '" data-extra="' + E(qs) + '" />' +
+      (val ? '<button class="sb-clear" data-act="search-clear:' + o.key + '" title="清空">×</button>' : '') +
+      '<button class="btn sm sb-go" data-act="search:' + o.key + '">搜索</button>' +
+      '</div>';
   };
 
   ui.hdr = function (o) {    return '<header class="nav">' +
