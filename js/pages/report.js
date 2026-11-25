@@ -28,6 +28,7 @@
     var b = d.buildingOf(bld) || { code: bld, name: bld, floors: 0 };
     var period = params.period || d.period();
     var filter = params.filter || 'all';
+    var q = params.q || '';
     var key = role === 'manager' ? 'manager.blddetail' : 'supervisor.blddetail';
 
     var rooms = App.store.data.rooms.filter(function (r) { return r.bld === bld; });
@@ -45,6 +46,7 @@
     });
 
     var shown = cards.filter(function (c) {
+      if (!U.hit(q, [c.room.id, c.emp && c.emp.name, c.emp && c.emp.id])) return false;
       if (filter === 'todo') return c.st === 'todo';
       if (filter === 'exception') return c.st === 'exception';
       if (filter === 'billed') return !!c.bill;
@@ -104,9 +106,16 @@
 
     var pct = U.pct(done, rooms.length);
 
+    var backAct = role === 'manager' ? 'nav:manager.bills' : 'nav:supervisor.dash';
+    var backTxt = role === 'manager' ? '返回账单管理' : '返回工作台';
+
     return '<div class="view wide"><div class="body">' +
+      '<button class="backlink" data-act="' + backAct + '">' +
+      ui().icon('back', 14) + '<span>' + backTxt + '</span></button>' +
       '<div class="subnav" style="flex-wrap:wrap;max-width:100%">' + tabs + '</div>' +
       ui().periodChips(d.periods(), period, key, { bld: bld }) +
+      ui().searchBar({ value: q, key: key, extra: { bld: bld, period: period, filter: filter } }) +
+      (q ? '<div class="search-tip">搜索「<b>' + U.esc(q) + '</b>」：' + shown.length + ' 间</div>' : '') +
 
       '<section class="ovcard">' +
       '<div class="ov-left">' +
