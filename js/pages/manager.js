@@ -49,8 +49,8 @@
 
     return '<div class="view wide"><div class="body">' + mgrNav('buildings') +
       '<div class="panel"><div class="ph">楼栋管理</div>' +
-      '<div class="note-bar">本页仅<b>物业管家</b>可修改。改名称只影响显示，不影响抄表记录与账单；' +
-      '改楼层数/每层房间数会增减房间，已有住户或抄表数据的房间不会被删除。</div>' +
+      '<div class="note-bar">本页仅<b>物业管家</b>可修改。名称、楼层数、每层房间数可以<b>只改其中一项</b>单独保存；' +
+      '改名称只影响显示，不影响抄表记录与账单；改楼层数/每层房间数会增减房间，<b>已有住户或抄表数据的房间不会被删除</b>。</div>' +
       '<div class="table-scroll"><table class="tbl"><thead><tr><th>楼栋名称</th><th>编号</th><th>楼层数</th><th>每层房间数</th><th>房间总数</th><th>在住</th><th>操作</th></tr></thead>' +
       '<tbody>' + (rows || '<tr><td colspan="7" class="muted center">还没有楼栋</td></tr>') + '</tbody></table></div></div>' +
       '</div></div>';
@@ -67,17 +67,24 @@
       var req = d.priceRequestOf(b.code, period);
       var curE = cur ? (cur.electricity / 100).toFixed(2) : '';
       var curW = cur ? (cur.water / 100).toFixed(2) : '';
-      return '<tr>' +
-        '<td class="b">' + U.esc(b.name) + '</td>' +
-        '<td class="num">' + (curE || '—') + '</td>' +
-        '<td class="num">' + (curW || '—') + '</td>' +
-        '<td><input class="cell-input num" id="prE-' + b.code + '" value="' + curE + '" inputmode="decimal" /></td>' +
-        '<td><input class="cell-input num" id="prW-' + b.code + '" value="' + curW + '" inputmode="decimal" /></td>' +
-        '<td><input class="cell-input" id="prR-' + b.code + '" placeholder="变更原因" maxlength="30" /></td>' +
-        '<td>' + (req
-          ? ui().chip('审批中', 'warn')
-          : '<button class="btn sm" data-act="price-submit:' + b.code + '">提交变更</button>') + '</td>' +
-        '</tr>';
+      return '<div class="pcard">' +
+        '<div class="pc-head"><b>' + U.esc(b.name) + '</b>' +
+        (req ? ui().chip('审批中', 'warn') : '') + '</div>' +
+        '<div class="pc-cur">当前：电 <b>' + (curE || '—') + '</b> 元/度 · 水 <b>' + (curW || '—') + '</b> 元/吨</div>' +
+        '<div class="pc-row">' +
+        '<label class="pc-f"><span>新电价（元/度）</span>' +
+        '<input class="cell-input num" id="prE-' + b.code + '" value="' + curE + '" inputmode="decimal" /></label>' +
+        '<label class="pc-f"><span>新水价（元/吨）</span>' +
+        '<input class="cell-input num" id="prW-' + b.code + '" value="' + curW + '" inputmode="decimal" /></label>' +
+        '</div>' +
+        '<label class="pc-f"><span>变更原因</span>' +
+        '<input class="cell-input" id="prR-' + b.code + '" placeholder="如：电价上调" maxlength="30" /></label>' +
+        '<div class="pc-foot">' +
+        (req
+          ? '<span class="t1 muted">已提交，等待管理员审批</span>'
+          : '<button class="btn sm" data-act="price-submit:' + b.code + '">提交变更</button>') +
+        '</div>' +
+        '</div>';
     }).join('');
 
     var history = (App.store.data.prices || []).slice()
@@ -95,10 +102,8 @@
     return '<div class="view wide"><div class="body">' + mgrNav('price') +
       ui().periodChips(d.periods(), period, 'manager.price') +
       '<div class="panel"><div class="ph">各楼栋单价（' + period + '）</div>' +
-      '<div class="note-bar">每个楼栋单独定价；提交后进入待审批，<b>管理员批准前不生效</b>，系统仍按原单价出账。<b>表格可左右滑动</b>。</div>' +
-      '<div class="table-scroll"><table class="tbl"><thead><tr><th>楼栋</th><th>当前电价</th><th>当前水价</th>' +
-      '<th>新电价（元/度）</th><th>新水价（元/吨）</th><th>变更原因</th><th>操作</th></tr></thead>' +
-      '<tbody>' + (rows || '<tr><td colspan="7" class="muted center">还没有楼栋</td></tr>') + '</tbody></table></div></div>' +
+      '<div class="note-bar">每个楼栋单独定价；提交后进入待审批，<b>管理员批准前不生效</b>，系统仍按原单价出账。</div>' +
+      '<div class="pricegrid">' + (rows || '<div class="muted center" style="padding:22px">还没有楼栋</div>') + '</div></div>' +
       '<div class="panel"><div class="ph">价格历史（近 12 条）</div>' +
       '<div class="table-scroll"><table class="tbl"><thead><tr><th>楼栋</th><th>账期</th><th>电价</th><th>水价</th><th>备注</th></tr></thead>' +
       '<tbody>' + (history || '<tr><td colspan="5" class="muted center" style="padding:22px">暂无记录</td></tr>') +
@@ -139,7 +144,7 @@
       var emp = d.employeeById(b.employeeId);
       var st = STATUS[b.status] || ['未知', 'todo'];
       return '<tr><td class="b">' + b.roomId + '</td>' +
-        '<td>' + (emp ? emp.name : '—') + '</td>' +
+        '<td class="nw">' + (emp ? emp.name : '—') + '</td>' +
         '<td class="num">' + b.usageE + '</td><td class="num">' + b.usageW + '</td>' +
         '<td class="num b">' + ui().money(b.total) + '</td>' +
         '<td>' + ui().chip(st[0], st[1]) + '</td></tr>';
