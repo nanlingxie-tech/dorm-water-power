@@ -18,15 +18,18 @@
   }
 
   /* ==================== 房间变更审核 ==================== */
-  P['supervisor.rooms'] = function () {
+  P['supervisor.rooms'] = function (ctx) {
     var d = dom();
-    var pend = d.pendingRoomRequests();
+    var q = (ctx && ctx.params && ctx.params.q) || '';
+    var pend = d.pendingRoomRequests().filter(function (r) {
+      return U.hit(q, [r.roomId, r.employee.name, r.buildingName, r.building, r.requestedBy]);
+    });
     var hist = d.roomRequestsAll().filter(function (r) { return r.status !== 'pending'; })
       .sort(function (a, b) { return a.reviewedAt < b.reviewedAt ? 1 : -1; }).slice(0, 10);
 
     var rows = pend.map(function (r) {
       return '<tr>' +
-        '<td class="b">' + U.esc(r.roomId) + '</td>' +
+        '<td class="b nw">' + U.esc(r.roomId) + '</td>' +
         '<td>' + U.esc(r.buildingName || r.building) + '</td>' +
         '<td class="num">' + r.floor + 'F</td>' +
         '<td>' + (r.action === 'add' ? ui().chip('新增', 'pri') : ui().chip('修改', 'todo')) + '</td>' +
@@ -49,6 +52,8 @@
     }).join('');
 
     return '<div class="view wide"><div class="body">' + svNav('rooms') +
+      ui().searchBar({ value: q, key: 'supervisor.rooms' }) +
+      (q ? '<div class="search-tip">搜索「<b>' + U.esc(q) + '</b>」：待审核 ' + pend.length + ' 条</div>' : '') +
       '<div class="panel"><div class="ph">待审核的房间变更（' + pend.length + '）</div>' +
       '<div class="note-bar">保安提交的新增/更换住户，需主管通过后才写入房间台账。驳回必须填理由。</div>' +
       '<div class="table-scroll"><table class="tbl"><thead><tr><th>房间</th><th>楼栋</th><th>楼层</th><th>类型</th><th>新住户</th>' +
@@ -138,9 +143,15 @@
   P['supervisor.review'] = function (ctx) {
     var d = dom();
     var period = (ctx && ctx.params && ctx.params.period) || d.period();
-    var rooms = d.pendingRooms(period);
+    var q = (ctx && ctx.params && ctx.params.q) || '';
+    var rooms = d.pendingRooms(period).filter(function (room) {
+      var emp = d.employeeOf(room.id);
+      return U.hit(q, [room.id, emp && emp.name, emp && emp.id]);
+    });
     var exceptions = App.store.data.readings.filter(function (r) {
-      return r.period === period && r.status === 'exception';
+      if (r.period !== period || r.status !== 'exception') return false;
+      var emp = d.employeeOf(r.roomId);
+      return U.hit(q, [r.roomId, emp && emp.name, emp && emp.id, r.exceptionReason]);
     });
 
     var rows = rooms.map(function (room) {
@@ -154,8 +165,8 @@
         '<td><span class="thumbs">' +
         thumbOf(e, 'e') + thumbOf(w, 'w') +
         '</span></td>' +
-        '<td class="b">' + room.id + '</td>' +
-        '<td>' + (emp ? emp.name : '—') + '</td>' +
+        '<td class="b nw">' + room.id + '</td>' +
+        '<td class="nw">' + (emp ? emp.name : '—') + '</td>' +
         '<td class="num">' + (e ? e.prevReading + ' → <b>' + e.reading + '</b>' : '—') + '</td>' +
         '<td class="num">' + (w ? w.prevReading + ' → <b>' + w.reading + '</b>' : '—') + '</td>' +
         '<td>' + warn + (note ? '<div class="t1 muted">' + U.esc(note) + '</div>' : '') + '</td>' +
@@ -175,6 +186,9 @@
 
     return '<div class="view wide"><div class="body">' + svNav('review') +
       ui().periodChips(d.periods(), period, 'supervisor.review') +
+      ui().searchBar({ value: q, key: 'supervisor.review', extra: { period: period } }) +
+      (q ? '<div class="search-tip">搜索「<b>' + U.esc(q) + '</b>」：待复核 ' + rooms.length +
+        ' 间、异常 ' + exceptions.length + ' 条</div>' : '') +
       '<div class="panel"><div class="ph">待复核清单（' + rooms.length + ' 间）' +
       '<div class="r">' + ui().chip('异常 ' + exceptions.length, 'warn') +
       '<button class="btn sm ghost" data-act="approve-all">批量通过（无预警）</button></div></div>' +
