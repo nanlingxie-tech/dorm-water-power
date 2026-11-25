@@ -3,7 +3,7 @@
   'use strict';
   var App = root.App || (root.App = {});
   var PREFIX = 'dwp.';
-  var KEYS = ['meta', 'buildings', 'rooms', 'employees', 'prices', 'priceRequests', 'roomRequests', 'readings', 'bills', 'disputes', 'audit', 'drafts', 'session'];
+  var KEYS = ['meta', 'buildings', 'rooms', 'employees', 'prices', 'priceRequests', 'roomRequests', 'exports', 'readings', 'bills', 'disputes', 'audit', 'drafts', 'session'];
   var SCHEMA = 3;
 
   function memoryStorage() {
@@ -85,6 +85,7 @@
       if (!d.drafts) d.drafts = {};
       if (!d.priceRequests) d.priceRequests = [];
       if (!d.roomRequests) d.roomRequests = [];
+      if (!d.exports) d.exports = [];
       // 版本迁移
       var ver = +((d.meta && d.meta.schemaVersion) || 0);
       if (!ver || ver < SCHEMA) {
